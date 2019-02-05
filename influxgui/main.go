@@ -120,7 +120,7 @@ func pingInfluxDB(w webview.WebView) bool {
 	return success
 }
 
-func runInfluxDBQuery(w webview.WebView, query string) {
+func runInfluxDBQuery(w webview.WebView, query string, database string) {
 	// Make client
 	influxdbClient, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr:     connectionConfig.Host,
@@ -132,9 +132,33 @@ func runInfluxDBQuery(w webview.WebView, query string) {
 	}
 	defer influxdbClient.Close()
 
-	q := client.NewQuery("SELECT count(value) FROM shapes", "square_holes", "ns")
+	q := client.NewQuery(query, database, "")
 	if response, err := influxdbClient.Query(q); err == nil && response.Error() == nil {
-		fmt.Println(response.Results)
+		log.Println(response.Results)
+		results := "------------------\\n"
+		columns := ""
+		for _, serie := range response.Results[0].Series {
+			log.Println(serie.Columns)
+			for _, column := range serie.Columns {
+				columns = fmt.Sprintf("%s%s\\t", columns, column)
+			}
+			results = fmt.Sprintf("%s%s\\n", results, columns)
+			values := ""
+			log.Println(serie.Values)
+			for _, value := range serie.Values {
+				log.Println(value)
+				for _, val := range value {
+					log.Println(val)
+					values = fmt.Sprintf("%s%s\\t", values, val)
+				}
+				values = fmt.Sprintf("%s\\n", values)
+			}
+			results = fmt.Sprintf("%s%s\\n", results, values)
+		}
+
+		jsCmd := `document.getElementById('query_content').value = "` + results + `";`
+		log.Println(jsCmd)
+		w.Eval(jsCmd)
 	}
 }
 
@@ -219,6 +243,7 @@ func handleRPC(w webview.WebView, data string) {
 		}
 		log.Println(queryInfo)
 		log.Println(query)
+		runInfluxDBQuery(w, queryInfo.Query, queryInfo.Database)
 	case strings.HasPrefix(data, "changeTitle:"):
 		w.SetTitle(strings.TrimPrefix(data, "changeTitle:"))
 	case strings.HasPrefix(data, "changeColor:"):
