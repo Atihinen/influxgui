@@ -1,0 +1,2 @@
+# influxgui
+GUI for InfluxDB
