@@ -14,8 +14,8 @@ import (
 
 //"./guihtml"
 const (
-	windowWidth  = 600
-	windowHeight = 480
+	windowWidth  = 1000
+	windowHeight = 880
 )
 
 type InfluxDBConnection struct {
@@ -53,6 +53,41 @@ var indexHTML = `
 				return false;
 			}
 		</script>
+		<style>
+			html, body {
+				margin: 0;
+				padding: 0;
+			}
+			header {
+				width: 100vw;
+				height: 3em;
+				background: #ccc;
+				padding-top: 0.5em;
+				padding-left: 1em;
+				padding-right: 1em;
+			}
+
+			#query_input_container {
+				width: 100vw;
+				height: 100%;
+				padding-left: 1em;
+			}
+
+			#influxdb_query {
+				width: 70%;
+			}
+
+			#query_content_container {
+				width: 100vw;
+				height: 100%;
+			}
+
+			#query_content {
+				width: 96%;
+				margin-left: 2%;
+				height: 40em;
+			}
+		</style>
 	</head>
 	<body>
 		<div id="app">
