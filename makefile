@@ -11,5 +11,14 @@ all: test build
 test:
 	echo "Testing..."
 
-build:
-	mkdir -p ./build && ${GOBUILD} -o ./build/${BINARY_NAME}_linux -v && xgo -dest ./build/ -targets windows/*,darwin/* github.com/Atihinen/influxgui
+build-dev:
+	ENV="develop" mkdir -p ./build && ${GOBUILD} -o ./build/${BINARY_NAME}_linux -v *.go
+
+build-linux:
+	mkdir -p ./build && ${GOBUILD} -o ./build/${BINARY_NAME}_linux -v *.go
+
+build: build-linux
+	xgo -dest ./build/ -targets windows/*,darwin/* github.com/Atihinen/influxgui
+
+run: build-dev
+	./build/${BINARY_NAME}_linux
