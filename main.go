@@ -49,7 +49,7 @@ func main() {
 		Width:     windowWidth,
 		Height:    windowHeight,
 		Debug:     true,
-		Title:     "Simple window demo",
+		Title:     "InfluxGUI",
 		Resizable: true,
 		URL:       url,
 		ExternalInvokeCallback: handleRPC,
