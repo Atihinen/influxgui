@@ -108,6 +108,17 @@ var indexHTML = `
 				display: inline-block;
 				font-size: 12px;
 				font-weight: bold;
+				-moz-border-radius: 4px;
+				 -webkit-border-radius: 4px;
+				 border-radius: 4px;
+			}
+
+			input[type=text], input[type=password] {
+				border: 1px solid #80e5ff;
+				-moz-border-radius: 4px;
+				 -webkit-border-radius: 4px;
+				 border-radius: 4px;
+				 padding: 3px;
 			}
 		</style>
 	</head>
