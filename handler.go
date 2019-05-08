@@ -20,11 +20,17 @@ func handleRPC(w webview.WebView, data string) {
 		}
 		host := fmt.Sprintf("%s:%d", s[0], port)
 		connectionConfig = InfluxDBConnection{Host: host, Username: s[2], Password: s[3]}
-		res := pingInfluxDB(w)
+		res, message := pingInfluxDB()
 		if !res {
+			createAlertDialog(w, message, "")
 			return
 		}
-		showDatabases(w)
+		res, data := showDatabases()
+		if !res {
+			createAlertDialog(w, data, "")
+			return
+		}
+		w.Eval(data)
 		w.Eval("window.toggleConnectionStatus();")
 	case strings.HasPrefix(data, "createInfluxDBQuery"):
 		query := strings.TrimPrefix(data, "createInfluxDBQuery:")
@@ -36,6 +42,12 @@ func handleRPC(w webview.WebView, data string) {
 			w.Dialog(webview.DialogTypeAlert, webview.DialogFlagError, "Could not parse results!", err.Error())
 			return
 		}
-		runInfluxDBQuery(w, queryInfo.Query, queryInfo.Database)
+		res, data := runInfluxDBQuery(queryInfo.Query, queryInfo.Database)
+		if !res {
+			createAlertDialog(w, data, "")
+			return
+		}
+		w.Eval(data)
+
 	}
 }

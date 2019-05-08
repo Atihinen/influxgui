@@ -1,5 +1,9 @@
 package main
 
+import (
+	"github.com/zserge/webview"
+)
+
 var indexHTML = `
 <!doctype html>
 <html>
@@ -153,3 +157,7 @@ var indexHTML = `
 	</body>
 </html>
 `
+
+func createAlertDialog(w webview.WebView, message string, errMessage string) {
+	w.Dialog(webview.DialogTypeAlert, webview.DialogFlagError, message, errMessage)
+}

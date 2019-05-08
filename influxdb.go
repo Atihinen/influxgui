@@ -1,48 +1,63 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/influxdata/influxdb1-client/v2"
-	"github.com/zserge/webview"
 )
 
 type InfluxDBConnection struct {
-	Host     string
-	Username string
-	Password string
+	Host         string
+	Username     string
+	Password     string
+	Error        bool
+	ErrorMessage string
 }
 
-func pingInfluxDB(w webview.WebView) bool {
-	success := true
+func getInfluxDBClient() (client.Client, error) {
 	influxdbClient, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr:     connectionConfig.Host,
 		Username: connectionConfig.Username,
 		Password: connectionConfig.Password,
 	})
+	return influxdbClient, err
+
+}
+
+func pingInfluxDB() (bool, string) {
+	message := ""
+	buf := bytes.NewBufferString(message)
+	success := true
+	influxdbClient, err := getInfluxDBClient()
 	if err != nil {
-		w.Dialog(webview.DialogTypeAlert, webview.DialogFlagError, "Could not connect to influxdb", err.Error())
+		buf.WriteString("Could not connect to influxdb")
+		buf.WriteString(err.Error())
 		success = false
 	}
+	if !success {
+		return success, buf.String()
+	}
+	message = ""
 	_, _, err = influxdbClient.Ping(0)
 	if err != nil {
-		w.Dialog(webview.DialogTypeAlert, webview.DialogFlagError, "Could not ping to influxdb", err.Error())
+		buf.WriteString("Could not ping to influxdb")
+		buf.WriteString(err.Error())
 		success = false
 	}
-	return success
+	return success, buf.String()
 }
 
-func runInfluxDBQuery(w webview.WebView, query string, database string) {
-	// Make client
-	influxdbClient, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr:     connectionConfig.Host,
-		Username: connectionConfig.Username,
-		Password: connectionConfig.Password,
-	})
+func runInfluxDBQuery(query string, database string) (bool, string) {
+	status := true
+	influxdbClient, err := getInfluxDBClient()
+	data := ""
+	buf := bytes.NewBufferString(data)
 	if err != nil {
-		w.Dialog(webview.DialogTypeAlert, webview.DialogFlagError, "Could not connect to influxdb", err.Error())
+		buf.WriteString("Could not connect to influxdb")
+		buf.WriteString(err.Error())
+		status = false
 	}
 	defer influxdbClient.Close()
-
 	q := client.NewQuery(query, database, "")
 	if response, err := influxdbClient.Query(q); err == nil && response.Error() == nil {
 		results := "------------------\\n"
@@ -55,27 +70,28 @@ func runInfluxDBQuery(w webview.WebView, query string, database string) {
 			values := ""
 			for _, value := range serie.Values {
 				for _, val := range value {
-					values = fmt.Sprintf("%s%s\\t", values, val)
+					values = fmt.Sprintf("%s%v\\t", values, val)
 				}
 				values = fmt.Sprintf("%s\\n", values)
 			}
 			results = fmt.Sprintf("%s%s\\n", results, values)
 		}
 
-		jsCmd := `document.getElementById('query_content').value = "` + results + `";`
-		w.Eval(jsCmd)
+		data = `document.getElementById('query_content').value = "` + results + `";`
 	}
+	return status, data
 }
 
-func showDatabases(w webview.WebView) {
-	// Make client
-	influxdbClient, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr:     connectionConfig.Host,
-		Username: connectionConfig.Username,
-		Password: connectionConfig.Password,
-	})
+func showDatabases() (bool, string) {
+	status := true
+	data := ""
+	buf := bytes.NewBufferString(data)
+	influxdbClient, err := getInfluxDBClient()
+
 	if err != nil {
-		w.Dialog(webview.DialogTypeAlert, webview.DialogFlagError, "Could not connect to influxdb", err.Error())
+		buf.WriteString("Could not connect to influxdb")
+		buf.WriteString(err.Error())
+		status = false
 	}
 	defer influxdbClient.Close()
 
@@ -87,8 +103,7 @@ func showDatabases(w webview.WebView) {
 			option := fmt.Sprintf("<option value='%s'>%s</option>", res, res)
 			dbs = fmt.Sprintf("%s%s", dbs, option)
 		}
-		jsCmd := fmt.Sprintf("document.getElementById('inluxdb_db').innerHTML = \"%s\";", dbs)
-		w.Eval(jsCmd)
-
+		data = fmt.Sprintf("document.getElementById('inluxdb_db').innerHTML = \"%s\";", dbs)
 	}
+	return status, data
 }
