@@ -9,7 +9,7 @@ BINARY_UNIX=$(BINARY_NAME)_unix
 all: test build
 
 test:
-	echo "Testing..."
+	go test
 
 build-dev:
 	ENV="develop" mkdir -p ./build && ${GOBUILD} -o ./build/${BINARY_NAME}_linux -v *.go
@@ -17,7 +17,7 @@ build-dev:
 build-linux:
 	mkdir -p ./build && ${GOBUILD} -o ./build/${BINARY_NAME}_linux -v *.go
 
-build: build-linux
+build: test build-linux
 	xgo -dest ./build/ -targets windows/*,darwin/* github.com/Atihinen/influxgui
 
 run: build-dev
