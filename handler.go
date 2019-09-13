@@ -42,6 +42,8 @@ func handleRPC(w webview.WebView, data string) {
 			w.Dialog(webview.DialogTypeAlert, webview.DialogFlagError, "Could not parse results!", err.Error())
 			return
 		}
+		appendToLog(queryInfo.Query)
+		updateHistoryLogs(w)
 		res, data := runInfluxDBQuery(queryInfo.Query, queryInfo.Database)
 		if !res {
 			createAlertDialog(w, data, "")
@@ -50,4 +52,8 @@ func handleRPC(w webview.WebView, data string) {
 		w.Eval(data)
 
 	}
+}
+
+func updateHistoryLogs(w webview.WebView) {
+	writeHistoryLogs(w, getLogOptions())
 }

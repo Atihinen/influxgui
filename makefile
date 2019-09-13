@@ -9,7 +9,7 @@ BINARY_UNIX=$(BINARY_NAME)_unix
 all: test build
 
 test:
-	go test
+	${GOTEST}
 
 build-dev:
 	ENV="develop" mkdir -p ./build && ${GOBUILD} -o ./build/${BINARY_NAME}_linux -v *.go

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/zserge/webview"
 )
 
@@ -42,6 +43,25 @@ var indexHTML = `
 					connectionStatus.classList.add("not_connected");	
 				}
 			}
+
+			function toggleHistory(self){
+				var historyContainer = document.getElementById('history_container');
+				if(historyContainer.className == "hidden"){
+					historyContainer.classList.remove("hidden");
+					self.classList.remove("no_history");
+					self.classList.add("history");
+				}
+				else {
+					historyContainer.classList.add("hidden");
+					self.classList.remove("history");
+					self.classList.add("no_history");
+				}
+			}
+
+			function setQuery(query) {
+				alert("Changing value");
+				document.getElementById('influxdb_query').value = query;
+			}
 		</script>
 		<style>
 			html, body {
@@ -73,6 +93,15 @@ var indexHTML = `
 				top: -1.7em;
 			}
 
+			#show_history {
+				float: right;
+				margin-right: 0.5em;
+				cursor: pointer;
+				font-size: 2em;
+				position: relative;
+				top: -1.2em;
+			}
+
 			#query_input_container {
 				width: 100vw;
 				height: 100%;
@@ -94,13 +123,18 @@ var indexHTML = `
 				height: 40em;
 			}
 
-			.connected {
+			.connected, .history {
 				color: #4CAF50;
 			}
 
-			.not_connected {
+			.not_connected, .no_history {
 				color: #f44336;
 			}
+
+			.hidden {
+				display: none;
+			}
+
 
 			input[type=submit] {
 				background-color: #008CBA;
@@ -117,12 +151,23 @@ var indexHTML = `
 				 border-radius: 4px;
 			}
 
-			input[type=text], input[type=password] {
+			select, input[type=text], input[type=password] {
 				border: 1px solid #80e5ff;
 				-moz-border-radius: 4px;
 				 -webkit-border-radius: 4px;
 				 border-radius: 4px;
 				 padding: 3px;
+			}
+
+			#history_container {
+				width: 100vw;
+				height: 100%;
+				padding-left: 1em;
+				padding-right: 1em;
+			}
+
+			#history_content_dropdown {
+				width: 95%;
 			}
 		</style>
 	</head>
@@ -137,7 +182,8 @@ var indexHTML = `
 						<input type="password" placeholder="Password" id="influxdb_password" name="influxdb_password" />
 						<input type="submit" value="Connect" />
 					</form>
-					<span id="connection_status" title="Connection status" title="Connection status" class="not_connected">●</span>
+					<span id="connection_status" title="Connection status"class="not_connected">●</span>
+					<span onClick='toggleHistory(this);' id="show_history" title="Show history" class="no_history">⏍</span>
 				</div>
 			</header>
 			<div id="query_input_container">
@@ -148,6 +194,13 @@ var indexHTML = `
 					</select>
 					<input type="submit" value="Send query" />
 				</form>
+			</div>
+			<div id="history_container" class="hidden">
+				<select onchange="setQuery(this.options[this.selectedIndex].value)" id="history_content_dropdown">
+					<option value="SHOW MEASUREMENTS;">SHOW MEASUREMENTS;</option>
+					<option value="SELECT * FROM measurement LIMIT 1;">SELECT * FROM measurement LIMIT 1;</option>
+					<option value="SHOW DATABASES;">SHOW DATABASES;</option>
+				</select>
 			</div>
 			<div id="query_content_container">
 				<textarea id="query_content"></textarea>
@@ -160,4 +213,9 @@ var indexHTML = `
 
 func createAlertDialog(w webview.WebView, message string, errMessage string) {
 	w.Dialog(webview.DialogTypeAlert, webview.DialogFlagError, message, errMessage)
+}
+
+func writeHistoryLogs(w webview.WebView, content string) {
+	data := fmt.Sprintf("document.getElementById('history_content_dropdown').innerHTML = \"%s\";", content)
+	w.Eval(data)
 }

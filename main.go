@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	windowWidth  = 1000
+	windowWidth  = 1050
 	windowHeight = 600
 )
 
@@ -44,6 +44,7 @@ func getDebugFlag() bool {
 }
 
 func main() {
+	initalizeLog()
 	url := startServer()
 	w := webview.New(webview.Settings{
 		Width:     windowWidth,

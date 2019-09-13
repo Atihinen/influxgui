@@ -2,9 +2,12 @@ package main
 
 import (
 	"bytes"
+	"container/list"
 	"fmt"
 	"github.com/influxdata/influxdb1-client/v2"
 )
+
+var dblog *list.List
 
 type InfluxDBConnection struct {
 	Host         string
@@ -106,4 +109,27 @@ func showDatabases() (bool, string) {
 		data = fmt.Sprintf("document.getElementById('inluxdb_db').innerHTML = \"%s\";", dbs)
 	}
 	return status, data
+}
+
+func appendToLog(query string) {
+	dblog.PushBack(query)
+	if dblog.Len() > 10 {
+		dblog.Remove(dblog.Back())
+	}
+}
+
+func getLogOptions() string {
+	logOptions := ""
+	for value := dblog.Back(); value != nil; value = value.Prev() {
+		option := fmt.Sprintf("<option value='%v'>%v</option>", value.Value, value.Value)
+		logOptions = fmt.Sprintf("%s%s", logOptions, option)
+	}
+	return logOptions
+}
+
+func initalizeLog() {
+	dblog = list.New()
+	appendToLog("SHOW DATABASES;")
+	appendToLog("SELECT * FROM measurement LIMIT 1")
+	appendToLog("SHOW MEASUREMENTS;")
 }
