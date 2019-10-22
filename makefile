@@ -6,6 +6,9 @@ GOGET=$(GOCMD) get
 BINARY_NAME=influxgui
 BINARY_UNIX=$(BINARY_NAME)_unix
 
+clear:
+	rm -rf ./build
+
 all: test build
 
 test:
@@ -17,7 +20,7 @@ build-dev:
 build-linux:
 	mkdir -p ./build && ${GOBUILD} -o ./build/${BINARY_NAME}_linux -v *.go
 
-build: test build-linux
+build: test clear build-linux
 	xgo -dest ./build/ -targets windows/*,darwin/* github.com/Atihinen/influxgui
 
 run: build-dev
