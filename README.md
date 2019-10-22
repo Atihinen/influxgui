@@ -8,6 +8,10 @@ Standalone GUI for influxDB for debugging and verify Influx Query
 
 Download correct binary for your OS from releases.
 
+## macOS
+
+You need to give permissions to the binary with `chmod u+x` before running the application.
+
 # Usage
 
 After download, douple click the binary to open the GUI.
