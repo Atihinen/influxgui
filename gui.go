@@ -59,7 +59,6 @@ var indexHTML = `
 			}
 
 			function setQuery(query) {
-				alert("Changing value");
 				document.getElementById('influxdb_query').value = query;
 			}
 		</script>
