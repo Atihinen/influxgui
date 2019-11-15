@@ -32,7 +32,7 @@ Then run queries against correct database.
 
 ## Setup dev env
 
-1. [Install GO][https://golang.org/doc/install]
+1. [Install GO](https://golang.org/doc/install)
 2. Clone this repository
 3. Run: `go get'
 
