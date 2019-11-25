@@ -32,12 +32,12 @@ func TestAppendToLogTakesOnly10Elements(t *testing.T) {
 	if dbloglen != 10 {
 		t.Error("Len should not be 10, was", dbloglen)
 	}
-	expected_first := "SELECT * FROM data LIMIT 1"
+	expected_first := "SELECT * FROM data LIMIT 2"
 	observed_first := dblog.Front().Value
 	if expected_first != observed_first {
 		t.Error(fmt.Sprintf("First element should be %s, was %s", expected_first, observed_first))
 	}
-	expected_last := "SELECT * FROM data LIMIT 10"
+	expected_last := "SELECT * FROM data LIMIT 11"
 	observed_last := dblog.Back().Value
 	if expected_last != observed_last {
 		t.Error(fmt.Sprintf("First element should be %s, was %s", expected_last, observed_last))
