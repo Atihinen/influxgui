@@ -114,7 +114,7 @@ func showDatabases() (bool, string) {
 func appendToLog(query string) {
 	dblog.PushBack(query)
 	if dblog.Len() > 10 {
-		dblog.Remove(dblog.Back())
+		dblog.Remove(dblog.Front())
 	}
 }
 
