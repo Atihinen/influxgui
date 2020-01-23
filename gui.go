@@ -218,3 +218,7 @@ func writeHistoryLogs(w webview.WebView, content string) {
 	data := fmt.Sprintf("document.getElementById('history_content_dropdown').innerHTML = \"%s\";", content)
 	w.Eval(data)
 }
+
+func createInfluxDBQueryResponse(data string) (string){
+	return `document.getElementById('query_content').value = "` + data + `";`
+}

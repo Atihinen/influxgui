@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"container/list"
 	"fmt"
+	"strings"
 	"github.com/influxdata/influxdb1-client/v2"
 )
 
@@ -62,7 +63,8 @@ func runInfluxDBQuery(query string, database string) (bool, string) {
 	}
 	defer influxdbClient.Close()
 	q := client.NewQuery(query, database, "")
-	if response, err := influxdbClient.Query(q); err == nil && response.Error() == nil {
+	response, err := influxdbClient.Query(q)
+	if err == nil && response.Error() == nil {
 		results := "------------------\\n"
 		columns := ""
 		for _, serie := range response.Results[0].Series {
@@ -80,7 +82,12 @@ func runInfluxDBQuery(query string, database string) (bool, string) {
 			results = fmt.Sprintf("%s%s\\n", results, values)
 		}
 
-		data = `document.getElementById('query_content').value = "` + results + `";`
+		data = createInfluxDBQueryResponse(results)
+	} else if (response.Error() != nil && err == nil){
+		response_error := fmt.Sprintf("%v", response)
+		response_error = strings.Trim(response_error, "&{[] ")
+		response_error = strings.Trim(response_error, "}")
+		data = createInfluxDBQueryResponse(response_error)
 	}
 	return status, data
 }
