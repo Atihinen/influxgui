@@ -53,3 +53,16 @@ func TestGetLogOptions(t *testing.T) {
 		t.Error(fmt.Sprintf("Observed %s was not expected: %s", observed, expected))
 	}
 }
+
+func TestIfExists(t *testing.T) {
+	connections := list.New()
+	connections.PushBack("http://localhost:8086")
+	observed := getExists(connections, "http://localhost:8086")
+	if !observed {
+		t.Error(fmt.Sprintf("Should be true, was %v", observed))
+	}
+	observed = getExists(connections, "http://otherhost.com:8086")
+	if observed {
+		t.Error(fmt.Sprintf("Should be false, was %v", observed))
+	}
+}

@@ -8,8 +8,18 @@
 # Test binary, build with `go test -c`
 *.test
 
+# go-bindata compiled files
+assets.go
+
+# databasefile
+influxConfigs.db
+
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
 build
 src
+bin
+pkg
+#Node
+node_modules
