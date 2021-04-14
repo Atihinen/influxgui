@@ -1,8 +1,10 @@
 package main
 
 import (
+	"container/list"
 	"fmt"
-	"github.com/zserge/webview"
+
+	"github.com/webview/webview"
 )
 
 var indexHTML = `
@@ -219,6 +221,41 @@ func writeHistoryLogs(w webview.WebView, content string) {
 	w.Eval(data)
 }
 
-func createInfluxDBQueryResponse(data string) (string){
-	return `document.getElementById('query_content').value = "` + data + `";`
+func createInfluxDBQueryResponse(data string) string {
+	cmd := fmt.Sprintf("window.mv.viewmodel.queryResult(\"%v\");", data)
+	//cmd := `window.mv.viewmodel.queryResult("` + data + `");`
+	fmt.Printf("Query result: %v", cmd)
+	return cmd
+}
+
+func createInfluxDBQueryResponseJSON(data string) string {
+	cmd := fmt.Sprintf("window.populateDataTable(%v);", data)
+	fmt.Printf("JSON cmd: %v", cmd)
+	return cmd
+}
+
+func popluateConnections(w webview.WebView, connections *list.List) {
+	data := "window.mv.viewmodel.setConnections(["
+	for connection := connections.Front(); connection != nil; connection = connection.Next() {
+		option := fmt.Sprintf("'%v'", connection.Value)
+		data = fmt.Sprintf("%s%s,", data, option)
+		//fmt.Printf("connection: %v", connection.Value)
+	}
+	data = fmt.Sprintf("%s]);", data)
+	fmt.Printf("connection cmd: %s", data)
+	w.Eval(data)
+}
+
+func updateConnectionStatus(w webview.WebView, status bool) {
+	cmd := fmt.Sprintf("window.mv.viewmodel.setConnection(%v);", status)
+	w.Eval(cmd)
+}
+
+func populateDatabases(w webview.WebView, databases *list.List) {
+	cmd := "window.mv.viewmodel.setDatabases(["
+	for database := databases.Front(); database != nil; database = database.Next() {
+		cmd = fmt.Sprintf("%s'%v',", cmd, database.Value)
+	}
+	cmd = fmt.Sprintf("%s]);", cmd)
+	w.Eval(cmd)
 }

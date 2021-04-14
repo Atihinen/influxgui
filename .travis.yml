@@ -9,9 +9,14 @@ git:
 
 before_install:
   - sudo apt-get -y install libwebkit2gtk-4.0-dev
+  - nvm install stable
+  - go get -u github.com/go-bindata/go-bindata/...
 
 install:
-  - go get
+  - make compile-assets
+  - env GO111MODULE=on go get
+  - npm install
+  
 
 # Don't email me the results of the test runs.
 notifications:
@@ -21,5 +26,6 @@ notifications:
 # failing test, we want to see both. Configure golangci-lint with a
 # .golangci.yml file at the top level of your repo.
 script:
-  - make test
-  - make build-dev
+  - make js-lint
+  - env GO111MODULE=on make test
+  - env GO111MODULE=on make build-dev
