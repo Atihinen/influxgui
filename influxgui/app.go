@@ -28,7 +28,14 @@ func (a *App) Greet(name string) string {
 }
 
 func (a *App) GetConnections() string {
-	connections, _ := getConnections()
+	db, err := openDB()
+	if err != nil {
+		return err.Error()
+	}
+	connections, err := getConnections(db)
+	if err != nil {
+		return err.Error()
+	}
 	var connectionsSlice []string
 	for e := connections.Front(); e != nil; e = e.Next() {
 		if val, ok := e.Value.(string); ok {
@@ -41,5 +48,18 @@ func (a *App) GetConnections() string {
 		return err.Error()
 	}
 	return string(jsonArray)
+
+}
+
+func (a *App) StoreConnections(host string) string {
+	db, err := openDB()
+	if err != nil {
+		return err.Error()
+	}
+	rc, err := storeConnectionConfig(db, host)
+	if err != nil {
+		return err.Error()
+	}
+	return fmt.Sprintf("%v", rc)
 
 }
