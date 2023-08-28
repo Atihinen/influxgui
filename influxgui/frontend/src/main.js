@@ -5,6 +5,8 @@ import logo from './assets/images/logo-universal.png';
 import {Greet} from '../wailsjs/go/main/App';
 import {GetConnections} from '../wailsjs/go/main/App';
 import {StoreConnections} from "../wailsjs/go/main/App";
+import {DeleteConnection} from "../wailsjs/go/main/App";
+import {Connect} from "../wailsjs/go/main/App";
 
 document.querySelector('#app').innerHTML = `
     <header id="header">
@@ -48,18 +50,29 @@ document.querySelector('#app').innerHTML = `
             </div>
         </div>
     </div>
-    <img id="logo" class="logo">
+    <div class="container mx-auto p-4">
+        <div id="connection_details">
+            <div id="connect_container">
+                <form id="influxdb_connection_form">
+                    <input type="text" placeholder="Username" id="influxdb_username" name="influxdb_username" />
+                    <input type="password" placeholder="Password" id="influxdb_password" name="influxdb_password" />
+                    <input type="submit" value="Connect" />
+                </form>
+                <span id="connection_status">●</span>
+            </div>
+        </div>
+    </div>
+    <!--<img id="logo" class="logo">
       <div class="result" id="result">Please enter your name below 👇</div>
       <div class="input-box" id="input">
         <input class="input" id="name" type="text" autocomplete="off" />
         <button class="btn" onclick="greet()">Greet</button>
       </div>
-    </div>
+    </div>-->
 `;
 document.getElementById('logo').src = logo;
 
-let nameElement = document.getElementById("name");
-nameElement.focus();
+//let nameElement = document.getElementById("name");
 let resultElement = document.getElementById("result");
 let alertDialog = document.getElementById("alert_container");
 let connectionsDialog = document.getElementById("new-database");
@@ -69,6 +82,10 @@ let selectConnections = document.getElementById("iconnections");
 let managedConnections = document.getElementById("existing_connections");
 let storeHostInput = document.getElementById("new_connetion");
 let storeHostForm = document.getElementById("store_connection");
+let connectionStatus = document.getElementById("connection_status");
+let influxUser = document.getElementById("influxdb_username");
+let influxPw = document.getElementById("influxdb_password");
+let connectionForm = document.getElementById("influxdb_connection_form");
 
 function toggleState(element, state){
     if(state == true){
@@ -82,7 +99,9 @@ function toggleState(element, state){
 }
 
 function removeConnection(url){
+    window.toggleConnectionsDialog(false);
     console.log("This is going to be deleted "+url);
+    window.deleteHost(url);
 }
 
 function popuplateConnections(connections){
@@ -137,6 +156,17 @@ selectConnections.onchange = function() {
     console.log("Value was changed: "+selectConnections.value);
     if(value == "Manage connections") {
         window.toggleConnectionsDialog(true);
+    }
+}
+
+window.toggleConnectionStatus = function(state){
+    if(state == true){
+        connectionStatus.classList.remove("not_connected");
+        connectionStatus.classList.add("connected");
+    }
+    else {
+        connectionStatus.classList.remove("connected");
+        connectionStatus.classList.add("not_connected");
     }
 }
 
@@ -229,12 +259,68 @@ window.storeHost = function(){
     return false;
 };
 
+window.deleteHost = function(host) {
+    if(host == "") return;
+    try {
+        DeleteConnection(host)
+            .then((result) => {
+                if(result == 200){
+                    window.setAlertMessage(host+" deleted", "Success");
+                }
+                else {
+                    window.setAlertMessage(result);
+                }
+                window.toggleAlertDialog(true);
+            })
+            .catch((err) => {
+                window.setAlertMessage(err);
+                window.toggleAlertDialog(true);
+            });
+    } catch (err) {
+        window.setAlertMessage(err);
+        window.toggleAlertDialog(true);
+    }
+    window.getConnections();
+}
+
+window.connectInfluxDB = function(){
+    var connecion = {
+        "Host": selectConnections.value,
+        "Usename": influxUser.value,
+        "Password": influxPw.value,
+    };
+    try {
+        Connect(JSON.stringify(connecion))
+            .then((result)=>{
+                if(result==200){
+                    toggleConnectionStatus(true);
+                }
+                else {
+                    window.setAlertMessage(result);
+                    window.toggleAlertDialog(true);
+                }
+            })
+            .catch((err) => {
+                window.setAlertMessage(err);
+                window.toggleAlertDialog(true);
+            });
+    } catch (err) {
+        window.setAlertMessage(err);
+        window.toggleAlertDialog(true);
+    }
+}
+
 // when loaded
 storeHostForm.addEventListener("submit", function(evt){
     evt.preventDefault();
     window.toggleConnectionsDialog(false);
     return window.storeHost();
 });
+connectionForm.addEventListener("submit", function(evt){
+    evt.preventDefault();
+    window.connectInfluxDB();
+});
 window.getConnections();
 window.toggleAlertDialog(false);
 window.toggleConnectionsDialog(false);
+window.toggleConnectionStatus(false);

@@ -83,3 +83,33 @@ body {
       left: -1.2em;
       padding: 1em 1em 1em 1.5em;
   }
+
+#connection_details {
+    background: #ffffff;
+    margin-top: 0;
+    padding: 1em 0.2em;
+}
+
+
+#connect_container {
+    width: 100vw;
+    height: 100%;
+    padding-left: 1em;
+    margin: 0.5em 0 0.5em 0;
+}
+
+#connection_status {
+    float: right;
+    margin-right: 2em;
+    position: relative;
+    top: -1.7em;
+}
+
+
+.connected, .history {
+    color: #4CAF50;
+}
+
+.not_connected, .no_history {
+    color: #f44336;
+}

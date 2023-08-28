@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
+	client "github.com/influxdata/influxdb1-client/v2"
 )
 
 // App struct
 type App struct {
-	ctx context.Context
+	ctx        context.Context
+	connection client.Client
 }
 
 // NewApp creates a new App application struct
@@ -62,4 +65,35 @@ func (a *App) StoreConnections(host string) string {
 	}
 	return fmt.Sprintf("%v", rc)
 
+}
+
+func (a *App) DeleteConnection(host string) string {
+	db, err := openDB()
+	if err != nil {
+		return err.Error()
+	}
+	rc, err := deleteConnectionConfig(db, host)
+	if err != nil {
+		return err.Error()
+	}
+	return fmt.Sprintf("%v", rc)
+}
+
+func (a *App) Connect(content string) string {
+	fmt.Printf("%v", content)
+	var connectionData = InfluxDBConnection{}
+	err := json.Unmarshal([]byte(content), &connectionData)
+	if err != nil {
+		return err.Error()
+	}
+	connection, err := NewClient(connectionData.Host, connectionData.Username, connectionData.Password)
+	if err != nil {
+		return err.Error()
+	}
+	rc, err := Ping(connection)
+	if err != nil {
+		return err.Error()
+	}
+	a.connection = connection //store connection for future queries
+	return fmt.Sprintf("%v", rc)
 }

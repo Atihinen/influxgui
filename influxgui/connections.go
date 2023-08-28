@@ -7,6 +7,16 @@ import (
 	"github.com/tidwall/buntdb"
 )
 
+func getExists(connections *list.List, host string) bool {
+	exists := false
+	for connection := connections.Front(); connection != nil; connection = connection.Next() {
+		if host == connection.Value {
+			exists = true
+		}
+	}
+	return exists
+}
+
 func getConnections(db *buntdb.DB) (*list.List, error) {
 
 	connections := list.New()
@@ -41,4 +51,19 @@ func storeConnectionConfig(db *buntdb.DB, host string) (int, error) {
 	}
 	return 200, nil
 
+}
+
+func deleteConnectionConfig(db *buntdb.DB, host string) (int, error) {
+	connections, _ := getConnections(db)
+	exists := getExists(connections, host)
+	if exists {
+		err := db.Update(func(tx *buntdb.Tx) error {
+			_, err := tx.Delete(host)
+			return err
+		})
+		if err != nil {
+			return 400, err
+		}
+	}
+	return 200, nil
 }
