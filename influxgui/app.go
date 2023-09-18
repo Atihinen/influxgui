@@ -4,14 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
-	client "github.com/influxdata/influxdb1-client/v2"
+	"log"
 )
 
 // App struct
 type App struct {
 	ctx        context.Context
-	connection client.Client
+	connection InfluxDBConnection
 }
 
 // NewApp creates a new App application struct
@@ -80,7 +79,6 @@ func (a *App) DeleteConnection(host string) string {
 }
 
 func (a *App) Connect(content string) string {
-	fmt.Printf("%v", content)
 	var connectionData = InfluxDBConnection{}
 	err := json.Unmarshal([]byte(content), &connectionData)
 	if err != nil {
@@ -94,6 +92,43 @@ func (a *App) Connect(content string) string {
 	if err != nil {
 		return err.Error()
 	}
-	a.connection = connection //store connection for future queries
+	a.connection = connectionData //store connection for future queries
 	return fmt.Sprintf("%v", rc)
+}
+
+func (a *App) GetDatabases() string {
+	connection, err := NewClient(a.connection.Host, a.connection.Username, a.connection.Password)
+	if err != nil {
+		return err.Error()
+	}
+	status, databases, data := GetDatabases(connection)
+	log.Println("databases %v", databases)
+	if !status {
+		return data
+	}
+	var slice []string
+	for e := databases.Front(); e != nil; e = e.Next() {
+		if val, ok := e.Value.(string); ok {
+			log.Println("Db name %v", val)
+			slice = append(slice, val)
+		}
+	}
+	jsonArray, err := json.Marshal(slice)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return err.Error()
+	}
+	return string(jsonArray)
+}
+
+func (a *App) RunQuery(query string, database string) string {
+	connection, err := NewClient(a.connection.Host, a.connection.Username, a.connection.Password)
+	if err != nil {
+		return err.Error()
+	}
+	data, err := DoQuery(connection, query, database)
+	if err != nil {
+		return err.Error()
+	}
+	return fmt.Sprintf(data)
 }

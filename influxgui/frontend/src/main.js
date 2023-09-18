@@ -1,17 +1,18 @@
 import './style.css';
 import './app.css';
 
-import logo from './assets/images/logo-universal.png';
+import logo from './assets/images/logo.png';
 import {Greet} from '../wailsjs/go/main/App';
 import {GetConnections} from '../wailsjs/go/main/App';
 import {StoreConnections} from "../wailsjs/go/main/App";
 import {DeleteConnection} from "../wailsjs/go/main/App";
 import {Connect} from "../wailsjs/go/main/App";
-
+import {GetDatabases} from "../wailsjs/go/main/App";
+import {RunQuery} from "../wailsjs/go/main/App";
 document.querySelector('#app').innerHTML = `
     <header id="header">
     <div id="tools">
-        <div id="logo"><img src="/media/logo.png" alt="InfluxGUI" /> InfluxGUI</div>
+        <div id="logo"><img id="logo_img" alt="InfluxGUI" /> InfluxGUI</div>
         <ul class="ul inline right">
             <li>Connections
                 <select id="iconnections">
@@ -60,6 +61,20 @@ document.querySelector('#app').innerHTML = `
                 </form>
                 <span id="connection_status">●</span>
             </div>
+            <div id="query_input_container">
+                <form  id="send_query_form">
+                    <input type="text" placeholder="Query" id="influxdb_query" name="influxdb_query" />
+                    <select id="database_selection">
+                    </select>
+                    <input type="submit" value="Send query" />
+                </form>
+            </div>
+        </div>
+        <div id="query_content_container">
+            <textarea class="hidden" id="query_content"></textarea>
+            <div id="query_content_table">
+
+            </div>
         </div>
     </div>
     <!--<img id="logo" class="logo">
@@ -70,7 +85,7 @@ document.querySelector('#app').innerHTML = `
       </div>
     </div>-->
 `;
-document.getElementById('logo').src = logo;
+document.getElementById('logo_img').src = logo;
 
 //let nameElement = document.getElementById("name");
 let resultElement = document.getElementById("result");
@@ -86,6 +101,9 @@ let connectionStatus = document.getElementById("connection_status");
 let influxUser = document.getElementById("influxdb_username");
 let influxPw = document.getElementById("influxdb_password");
 let connectionForm = document.getElementById("influxdb_connection_form");
+let queryForm = document.getElementById("send_query_form");
+let queryInput = document.getElementById("influxdb_query");
+let influxDBSelection = document.getElementById("database_selection");
 
 function toggleState(element, state){
     if(state == true){
@@ -294,6 +312,7 @@ window.connectInfluxDB = function(){
             .then((result)=>{
                 if(result==200){
                     toggleConnectionStatus(true);
+                    window.getDatabases();
                 }
                 else {
                     window.setAlertMessage(result);
@@ -308,6 +327,80 @@ window.connectInfluxDB = function(){
         window.setAlertMessage(err);
         window.toggleAlertDialog(true);
     }
+};
+
+window.getDatabases = function(){
+    console.log("Fetching databases");
+    try {
+        GetDatabases()
+            .then((result) => {
+                // Update result with data back from App.Greet()
+                console.log("Data: "+result);
+                try {
+                    var data = JSON.parse(result);
+                }catch (err) {
+                    window.setAlertMessage(err);
+                    window.toggleAlertDialog(true);
+                }
+                influxDBSelection.innerHTML='';
+                for(var i=0; i<data.length; i++){
+                    console.log("DB name: "+data[i]);
+                    var option = document.createElement("option");
+                    option.value = data[i];
+                    option.text = data[i];
+                    influxDBSelection.appendChild(option);
+                }
+            })
+            .catch((err) => {
+                window.setAlertMessage(err);
+                window.toggleAlertDialog(true);
+            });
+    } catch (err) {
+        window.setAlertMessage(err);
+        window.toggleAlertDialog(true);
+    }
+    console.log("Done fetching databases");
+};
+
+window.doQuery = function(){
+    console.log("Start query");
+    var query = queryInput.value;
+    var database = influxDBSelection.value;
+    if(query == ""){
+        window.alertMessage("Query can't be empty");
+        window.toggleAlertDialog(true);
+        return
+    }
+    try {
+        RunQuery(query, database)
+            .then((result) => {
+                console.log("query result");
+                console.log(result);
+                if(result == ""){
+                    window.setAlertMessage("Query "+query+" done", "Success");
+                    window.toggleAlertDialog(true);
+                }
+                else {
+                    try {
+                        var data=JSON.parse(result);
+                        data["data"].push('');
+                        window.populateDataTable(data);
+                    }
+                    catch(err) {
+                        window.setAlertMessage(result+"<br />"+err);
+                        window.toggleAlertDialog(true);        
+                    }
+                }
+            })
+            .catch((err) => {
+                window.setAlertMessage(err);
+                window.toggleAlertDialog(true);
+            });
+    } catch(err){
+        window.setAlertMessage(err);
+        window.toggleAlertDialog(true);
+    }
+    console.log("end query");
 }
 
 // when loaded
@@ -319,8 +412,45 @@ storeHostForm.addEventListener("submit", function(evt){
 connectionForm.addEventListener("submit", function(evt){
     evt.preventDefault();
     window.connectInfluxDB();
+    return false;
+});
+queryForm.addEventListener("submit", function(evt){
+    evt.preventDefault();
+    window.doQuery();
+    return false;
 });
 window.getConnections();
 window.toggleAlertDialog(false);
 window.toggleConnectionsDialog(false);
 window.toggleConnectionStatus(false);
+
+//Datatable
+
+window.roott = document.getElementById('query_content_table');
+window.t= document.createElement('table');
+window.roott.appendChild(window.t);
+var data = {
+    "headings": [
+        "Query run"
+    ],
+    "data": [
+        ["Need to run query first"],
+        [],
+    ]
+};
+window.populateDataTable = function(jsonData){
+    console.log(jsonData);
+    jsonData["data"].pop();
+    var children = window.roott.children;
+    for (var i = 0; i < children.length; i++) {
+        var tableChild = children[i];
+        window.roott.removeChild(tableChild);
+    }
+    var dt = document.createElement('table')
+    window.roott.appendChild(dt);   
+    var dataTable = new DataTable(dt);
+    dataTable.insert(jsonData);
+    console.log("updated");
+};
+window.populateDataTable(data);
+console.log("Datatable popuplated");
