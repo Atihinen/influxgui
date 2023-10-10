@@ -1,5 +1,6 @@
 import './style.css';
-import './app.css';
+import './css/layers.min.css';
+import './css/simple-datatable-min.css';
 
 import logo from './assets/images/logo.png';
 import {Greet} from '../wailsjs/go/main/App';
@@ -21,7 +22,7 @@ document.querySelector('#app').innerHTML = `
                 </select>
             </li>
             <li><button class="secondary-input" id="history">Show history</button></li>
-            <li>Help</li></ul>
+            <li id="help_btn">Help</li></ul>
         </div>
     </header>
     <div id="alert_container" class="modal show">
@@ -69,6 +70,13 @@ document.querySelector('#app').innerHTML = `
                     <input type="submit" value="Send query" />
                 </form>
             </div>
+            <div id="history_container">
+                <select id="history_content_dropdown">
+                <option value="SHOW MEASUREMENTS;">SHOW MEASUREMENTS;</option>
+                <option value="SELECT * FROM measurement LIMIT 1;">SELECT * FROM measurement LIMIT 1;</option>
+                <option value="SHOW DATABASES;">SHOW DATABASES;</option>
+                </select>
+            </div>
         </div>
         <div id="query_content_container">
             <textarea class="hidden" id="query_content"></textarea>
@@ -86,6 +94,7 @@ document.querySelector('#app').innerHTML = `
     </div>-->
 `;
 document.getElementById('logo_img').src = logo;
+let queryHistory = ["SHOW DATABASES", "SELECT * FROM measurement LIMIT 1", "SHOW MEASUREMENTS"]; //in memory db
 
 //let nameElement = document.getElementById("name");
 let resultElement = document.getElementById("result");
@@ -104,6 +113,12 @@ let connectionForm = document.getElementById("influxdb_connection_form");
 let queryForm = document.getElementById("send_query_form");
 let queryInput = document.getElementById("influxdb_query");
 let influxDBSelection = document.getElementById("database_selection");
+let helpBtn = document.getElementById("help_btn");
+let showHistoryBtn = document.getElementById("history");
+let histroryContainer = document.getElementById("history_container");
+let historyDropdown = document.getElementById("history_content_dropdown");
+
+
 
 function toggleState(element, state){
     if(state == true){
@@ -169,12 +184,31 @@ window.setAlertMessage = function(message, topic){
     alertTopic.textContent = aTopic;
 };
 
+window.updateHistory = function(query){
+    queryHistory.push(query);
+    if(queryHistory.length > 10){
+        queryHistory.shift();
+    }
+    historyDropdown.innerHTML = '';
+    for(let i = 0; i < queryHistory.length; i++){
+        const option = document.createElement('option');
+        option.value = queryHistory[i];
+        option.textContent = queryHistory[i];
+        historyDropdown.appendChild(option);
+    }
+}
+
 selectConnections.onchange = function() {
     var value = selectConnections.value;
     console.log("Value was changed: "+selectConnections.value);
     if(value == "Manage connections") {
         window.toggleConnectionsDialog(true);
     }
+}
+
+historyDropdown.onchange = function(){
+    var value = historyDropdown.value;
+    queryInput.value = value;
 }
 
 window.toggleConnectionStatus = function(state){
@@ -185,6 +219,17 @@ window.toggleConnectionStatus = function(state){
     else {
         connectionStatus.classList.remove("connected");
         connectionStatus.classList.add("not_connected");
+    }
+}
+
+window.toggleHistory = function(){
+    if(histroryContainer.classList.contains("hidden")){
+        histroryContainer.classList.remove("hidden");
+        showHistoryBtn.innerText = "Hide history";
+    }
+    else {
+        histroryContainer.classList.add("hidden");
+        showHistoryBtn.innerText = "Show history";
     }
 }
 
@@ -382,9 +427,16 @@ window.doQuery = function(){
                 }
                 else {
                     try {
-                        var data=JSON.parse(result);
-                        data["data"].push('');
-                        window.populateDataTable(data);
+                        if(!query.toLowerCase().startsWith("create database")){
+                            var data=JSON.parse(result);
+                            data["data"].push('');
+                            window.populateDataTable(data);
+                        }
+                        else {
+                            window.setAlertMessage("Database created succesfully. Please reconnect the client.");
+                            window.toggleAlertDialog(true);
+                        }
+                        window.updateHistory(query);
                     }
                     catch(err) {
                         window.setAlertMessage(result+"<br />"+err);
@@ -419,10 +471,21 @@ queryForm.addEventListener("submit", function(evt){
     window.doQuery();
     return false;
 });
+helpBtn.addEventListener("click", function(evt){
+    evt.preventDefault();
+    window.runtime.BrowserOpenURL("https://docs.influxdata.com/influxdb/v1/query_language/");
+    return false;
+});
+showHistoryBtn.addEventListener("click", function(evt){
+    evt.preventDefault();
+    window.toggleHistory();
+    return false;
+});
 window.getConnections();
 window.toggleAlertDialog(false);
 window.toggleConnectionsDialog(false);
 window.toggleConnectionStatus(false);
+window.toggleHistory();
 
 //Datatable
 
